@@ -1,0 +1,19 @@
+{
+  "name": "discord-voice-keepalive",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-account Discord voice channel keepalive with watchdog auto-rejoin, deploys on Railway",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/keepalive.js && node --check src/healthserver.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "discord.js-selfbot-v13": "^3.7.1",
+    "dotenv": "^18.0.5"
+  }
+}

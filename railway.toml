@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node src/index.js"
+# MUST stay /healthz. /status reports voice state and Railway restarts the
+# container on a failed healthcheck — a Discord blip would become a restart loop.
+healthcheckPath = "/healthz"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

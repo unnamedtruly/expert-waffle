@@ -1,0 +1,9 @@
+# Pin Node; `engines` in package.json is not enough on Nixpacks.
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.build]
+cmds = ["npm ci --omit=dev"]
+
+[start]
+cmd = "node src/index.js"

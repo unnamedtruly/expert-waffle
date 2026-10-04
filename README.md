@@ -30,6 +30,7 @@ connection, use "Get the newest code" on the Settings tab to ship new commits.
 |---|---|
 | `DISCORD_TOKEN` | your bearer token |
 | `VOICE_CHANNEL_ID` | channel snowflake id |
+| `GUILD_ID` | optional server id — narrows the channel search |
 | `POLL_MS` | `5000` |
 | `READY_TIMEOUT_MS` | `30000` |
 | `VERBOSE` | `1` |
@@ -39,6 +40,9 @@ Background mode gives the app no address and no port, so there is no URL to chec
 state on the app's **Logs** tab — `[voice] sitting in "<channel>" — muted, holding` is the
 line that means it joined. You can query `/status` locally, or use "Give it one" on the
 Settings tab to restore an address.
+
+If it cannot find the channel, the log prints every voice channel the token can see, as
+`guildId/channelId  server / channel`. Copy the channel id from there into `VOICE_CHANNEL_ID`.
 
 ## Local run
 

@@ -12,6 +12,8 @@ let connection = null;
 let stopping = false;
 let pollTimer = null;
 let joinedAt = null;
+let lastDiagnosticAt = 0;
+const DIAGNOSTIC_INTERVAL_MS = 60_000;
 
 /** Introspection for /status — states only, never the token. */
 function describe() {
@@ -19,11 +21,61 @@ function describe() {
   return String(connection.state.status ?? 'unknown');
 }
 
+/**
+ * Find the target channel.
+ *
+ * client.channels.cache is not authoritative on this fork — the gateway payload
+ * that populates it does not reliably include every voice channel. Guild channel
+ * caches are walked instead, falling back to the client cache. GUILD_ID, when
+ * set, narrows the walk to one server and lets us say "not in this server"
+ * instead of "not found anywhere".
+ */
+function findInGuilds(client) {
+  const guilds = config.guildId
+    ? client.guilds.cache.filter((g) => g.id === config.guildId)
+    : client.guilds.cache;
+
+  for (const guild of guilds.values()) {
+    const hit = guild.channels.cache.get(config.channelId);
+    if (hit && hit.guild && typeof hit.join === 'function') return hit;
+  }
+  return null;
+}
+
 function resolveChannel(client) {
-  const channel = client.channels.cache.get(config.channelId);
-  if (!channel) return null;
-  if (typeof channel.join !== 'function' || !channel.guild) return null;
-  return channel;
+  return findInGuilds(client) ?? client.channels.cache.get(config.channelId) ?? null;
+}
+
+/** Human-readable inventory, so a wrong ID can be corrected from the logs. */
+function listVoiceChannels(client) {
+  const rows = [];
+  for (const guild of client.guilds.cache.values()) {
+    for (const channel of guild.channels.cache.values()) {
+      if (channel.type !== 'GUILD_VOICE') continue;
+      rows.push(`${guild.id}/${channel.id}  ${guild.name} / ${channel.name}`);
+    }
+  }
+  return rows;
+}
+
+function diagnose(client, reason) {
+  const guildIds = [...client.guilds.cache.keys()];
+  const lines = [
+    `[voice] cannot resolve channel ${config.channelId} (${reason})`,
+    `[voice]   guilds visible: ${guildIds.length} ${guildIds.join(' ') || '(none)'}`,
+    `[voice]   channels cache holds: ${client.channels.cache.size}`,
+  ];
+  if (config.guildId) lines.push(`[voice]   GUILD_ID filter: ${config.guildId}`);
+
+  const voices = listVoiceChannels(client);
+  if (voices.length === 0) {
+    lines.push('[voice]   NO voice channels visible — token may lack guild access, or Discord sent none yet');
+  } else {
+    lines.push('[voice]   voice channels you can see (set VOICE_CHANNEL_ID to one of these ids):');
+    for (const row of voices.slice(0, 25)) lines.push(`[voice]     ${row}`);
+    if (voices.length > 25) lines.push(`[voice]     ...and ${voices.length - 25} more`);
+  }
+  return lines.join('\n');
 }
 
 function tearDown() {
@@ -41,7 +93,14 @@ function tearDown() {
 async function joinOnce(client) {
   const channel = resolveChannel(client);
   if (!channel) {
-    console.warn('[voice] target channel not visible yet (cold cache or wrong id)');
+    // The cache can fill a moment after ready, so retry quietly — but keep the
+    // inventory readable: once a minute, not once every poll.
+    if (Date.now() - lastDiagnosticAt > DIAGNOSTIC_INTERVAL_MS) {
+      lastDiagnosticAt = Date.now();
+      console.warn(
+        diagnose(client, config.guildId ? 'GUILD_ID set but channel not in it' : 'no visible match')
+      );
+    }
     return false;
   }
 

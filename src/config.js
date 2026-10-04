@@ -12,7 +12,9 @@ function load(env = process.env) {
   return {
     token: (env.DISCORD_TOKEN ?? '').trim(),
     channelId: (env.VOICE_CHANNEL_ID ?? '').trim(),
-    // The state Sam asked for: red mic icon on the profile, forever.
+    // Optional. Narrows the channel search to one server and makes the log say
+    // which servers are actually visible when the channel cannot be found.
+    guildId: (env.GUILD_ID ?? '').trim(),
     selfMute: true,
     selfDeaf: false,
     // Poll interval doubles as the reconnect backoff.
@@ -31,6 +33,9 @@ function assertConfig() {
   if (!config.channelId) missing.push('VOICE_CHANNEL_ID');
   if (config.channelId && !/^\d{17,20}$/.test(config.channelId)) {
     throw new Error('VOICE_CHANNEL_ID must be a snowflake id (digits only)');
+  }
+  if (config.guildId && !/^\d{17,20}$/.test(config.guildId)) {
+    throw new Error('GUILD_ID must be a snowflake id (digits only) or left empty');
   }
   if (missing.length > 0) {
     throw new Error(`missing env: ${missing.join(', ')} — set them on the app's Environment tab`);

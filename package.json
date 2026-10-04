@@ -2,7 +2,7 @@
   "name": "discord-voice-keepalive",
   "version": "1.0.0",
   "private": true,
-  "description": "Self-account Discord voice channel keepalive with watchdog auto-rejoin, deploys on Railway",
+  "description": "Self-account Discord voice channel keepalive with watchdog auto-rejoin, deploys on blitz.cloud",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

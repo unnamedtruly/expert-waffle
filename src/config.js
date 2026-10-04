@@ -33,7 +33,7 @@ function assertConfig() {
     throw new Error('VOICE_CHANNEL_ID must be a snowflake id (digits only)');
   }
   if (missing.length > 0) {
-    throw new Error(`missing env: ${missing.join(', ')} — set them in Railway Variables`);
+    throw new Error(`missing env: ${missing.join(', ')} — set them on the app's Environment tab`);
   }
 }
 
